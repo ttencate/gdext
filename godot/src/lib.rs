@@ -43,11 +43,12 @@
 //!    careful when using such types. For example, when iterating over an `Array`, make sure that
 //!    it isn't being modified at the same time through another reference.
 //!
-//!    To avoid confusion these types don't implement `Clone`. You can use
-//!    [`Share`][crate::obj::Share] to create a new reference to the same instance, and
-//!    type-specific methods such as
-//!    [`Array::duplicate_deep()`][crate::builtin::Array::duplicate_deep] to make actual
-//!    copies. <br><br>
+//!    Similar to `Rc` and `Arc` in the standard library, these types have a `Clone` implementation
+//!    that just creates a new pointer to the same data. To avoid confusion, it's recommended that
+//!    you use the syntax `Gd::clone(&obj)` rather than `obj.clone()`.
+//!
+//!    To copy the actual data, use type-specific methods such as
+//!    [`Array::duplicate_deep()`][crate::builtin::Array::duplicate_deep]. <br><br>
 //!
 //! 4. **Manually managed types**: [`Gd<T>`][crate::obj::Gd] where `T` inherits from
 //!    [`Object`][crate::engine::Object] but not from [`RefCounted`][crate::engine::RefCounted];
@@ -136,7 +137,7 @@ pub mod prelude {
     };
     pub use super::init::{gdextension, ExtensionLayer, ExtensionLibrary, InitHandle, InitLevel};
     pub use super::log::*;
-    pub use super::obj::{Base, Gd, GdMut, GdRef, GodotClass, Inherits, InstanceId, Share};
+    pub use super::obj::{Base, Gd, GdMut, GdRef, GodotClass, Inherits, InstanceId};
 
     // Make trait methods available
     pub use super::engine::NodeExt as _;

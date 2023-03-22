@@ -7,7 +7,6 @@
 use godot_ffi as sys;
 
 use crate::builtin::{inner, FromVariant, ToVariant, Variant};
-use crate::obj::Share;
 use std::fmt;
 use std::marker::PhantomData;
 use std::ptr::addr_of_mut;
@@ -49,7 +48,7 @@ impl Dictionary {
     /// still be shallow copied.
     ///
     /// To create a shallow copy, use [`Self::duplicate_shallow`] instead. To create a new reference to
-    /// the same array data, use [`Share::share`].
+    /// the same array data, use [`clone`].
     ///
     /// _Godot equivalent: `dict.duplicate(true)`_
     pub fn duplicate_deep(&self) -> Self {
@@ -61,7 +60,7 @@ impl Dictionary {
     /// same value.
     ///
     /// To create a deep copy, use [`Self::duplicate_deep`] instead. To create a new reference to the
-    /// same dictionary data, use [`Share::share`].
+    /// same dictionary data, use [`clone`].
     ///
     /// _Godot equivalent: `dict.duplicate(false)`_
     pub fn duplicate_shallow(&self) -> Self {
@@ -268,8 +267,8 @@ impl fmt::Debug for Dictionary {
 ///
 /// To create a (mostly) independent copy instead, see [`Dictionary::duplicate_shallow()`] and
 /// [`Dictionary::duplicate_deep()`].
-impl Share for Dictionary {
-    fn share(&self) -> Self {
+impl Clone for Dictionary {
+    fn clone(&self) -> Self {
         unsafe {
             Self::from_sys_init(|self_ptr| {
                 let ctor = sys::builtin_fn!(dictionary_construct_copy);

@@ -18,7 +18,7 @@ use crate::builtin::meta::{ClassName, VariantMetadata};
 use crate::builtin::{FromVariant, ToVariant, Variant, VariantConversionError};
 use crate::obj::dom::Domain as _;
 use crate::obj::mem::Memory as _;
-use crate::obj::{cap, dom, mem, GodotClass, Inherits, Share};
+use crate::obj::{cap, dom, mem, GodotClass, Inherits};
 use crate::obj::{GdMut, GdRef, InstanceId};
 use crate::storage::InstanceStorage;
 use crate::{callbacks, engine, out};
@@ -34,7 +34,7 @@ use crate::{callbacks, engine, out};
 /// In particular, the memory management strategy is fully dependent on `T`:
 ///
 /// * Objects of type [`RefCounted`] or inherited from it are **reference-counted**. This means that every time a smart pointer is
-///   shared using [`Share::share()`], the reference counter is incremented, and every time one is dropped, it is decremented.
+///   cloned using [`Clone::clone()`], the reference counter is incremented, and every time one is dropped, it is decremented.
 ///   This ensures that the last reference (either in Rust or Godot) will deallocate the object and call `T`'s destructor.
 ///
 /// * Objects inheriting from [`Object`] which are not `RefCounted` (or inherited) are **manually-managed**.
@@ -220,7 +220,7 @@ impl<T: GodotClass> Gd<T> {
         // Initialize instance ID cache
         let id = unsafe { interface_fn!(object_get_instance_id)(obj.obj_sys()) };
         let instance_id = InstanceId::try_from_u64(id)
-            .expect("Gd initialization failed; did you call share() on a dead instance?");
+            .expect("Gd initialization failed; did you call clone() on a dead instance?");
         obj.cached_instance_id.set(Some(instance_id));
 
         obj
@@ -283,7 +283,7 @@ impl<T: GodotClass> Gd<T> {
     /// struct MyClass {}
     ///
     /// let obj: Gd<MyClass> = Gd::new_default();
-    /// let base = obj.share().upcast::<Node>();
+    /// let base = Gd::clone(&obj).upcast::<Node>();
     /// ```
     pub fn upcast<Base>(self) -> Gd<Base>
     where
@@ -581,9 +581,13 @@ impl<T: GodotClass> Drop for Gd<T> {
     }
 }
 
-impl<T: GodotClass> Share for Gd<T> {
-    fn share(&self) -> Self {
-        out!("Gd::share");
+/// Clones the reference, incrementing the reference count if necessary.
+///
+/// To make it explicit that only the reference is being cloned, not the data it refers to, it is
+/// recommended that you call this using the syntax `Gd::clone(&obj)` rather than `obj.clone()`.
+impl<T: GodotClass> Clone for Gd<T> {
+    fn clone(&self) -> Self {
+        out!("Gd::clone");
         Self::from_opaque(self.opaque).with_inc_refcount()
     }
 }

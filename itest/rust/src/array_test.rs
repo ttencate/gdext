@@ -96,9 +96,9 @@ fn array_hash() {
 }
 
 #[itest]
-fn array_share() {
+fn array_clone() {
     let mut array = array![1, 2];
-    let shared = array.share();
+    let shared = array.clone();
     array.set(0, 3);
     assert_eq!(shared.get(0), 3);
 }
@@ -374,7 +374,11 @@ fn untyped_array_return_from_godot_func() {
     let mut node = Node::new_alloc();
     let mut child = Node::new_alloc();
     child.set_name("child_node".into());
-    node.add_child(child.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
+    node.add_child(
+        Gd::clone(&child),
+        false,
+        InternalMode::INTERNAL_MODE_DISABLED,
+    );
     node.queue_free(); // Do not leak even if the test fails.
     let result = node.get_node_and_resource("child_node".into());
 
@@ -414,7 +418,11 @@ fn typed_array_return_from_godot_func() {
     let mut node = Node::new_alloc();
     let mut child = Node::new_alloc();
     child.set_name("child_node".into());
-    node.add_child(child.share(), false, InternalMode::INTERNAL_MODE_DISABLED);
+    node.add_child(
+        Gd::clone(&child),
+        false,
+        InternalMode::INTERNAL_MODE_DISABLED,
+    );
     node.queue_free(); // Do not leak even if the test fails.
     let children = node.get_children(false);
 

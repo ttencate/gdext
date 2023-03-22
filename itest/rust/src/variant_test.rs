@@ -10,7 +10,7 @@ use godot::builtin::{
     Vector3,
 };
 use godot::engine::Node2D;
-use godot::obj::InstanceId;
+use godot::obj::{Gd, InstanceId};
 use godot::prelude::{Basis, Dictionary, VariantArray, VariantConversionError};
 use godot::sys::{GodotFfi, VariantOperator, VariantType};
 use std::cmp::Ordering;
@@ -111,9 +111,8 @@ fn variant_equal() {
 
 #[itest]
 fn variant_call() {
-    use godot::obj::Share;
     let node2d = Node2D::new_alloc();
-    let variant = Variant::from(node2d.share());
+    let variant = Variant::from(Gd::clone(&node2d));
 
     // Object
     let position = Vector2::new(4.0, 5.0);

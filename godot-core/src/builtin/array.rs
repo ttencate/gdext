@@ -8,7 +8,6 @@ use godot_ffi as sys;
 
 use crate::builtin::meta::VariantMetadata;
 use crate::builtin::*;
-use crate::obj::Share;
 use std::fmt;
 use std::marker::PhantomData;
 use sys::{ffi_methods, interface_fn, GodotFfi};
@@ -33,7 +32,7 @@ use sys::{ffi_methods, interface_fn, GodotFfi};
 /// Like in GDScript, `Array` acts as a reference type: multiple `Array` instances may
 /// refer to the same underlying array, and changes to one are visible in the other.
 ///
-/// To create a copy that shares data with the original array, use [`Share::share()`]. If you want
+/// To create a copy that shares data with the original array, use [`clone()`]. If you want
 /// to create a copy of the data, use [`duplicate_shallow()`] or [`duplicate_deep()`].
 ///
 /// # Thread safety
@@ -226,7 +225,7 @@ impl<T: VariantMetadata> Array<T> {
     /// (such as `Array`, `Dictionary` and `Object`) will still refer to the same value.
     ///
     /// To create a deep copy, use [`duplicate_deep()`] instead. To create a new reference to the
-    /// same array data, use [`share()`].
+    /// same array data, use [`clone()`].
     pub fn duplicate_shallow(&self) -> Self {
         let duplicate: VariantArray = self.as_inner().duplicate(false);
         // SAFETY: duplicate() returns a typed array with the same type as Self
@@ -238,7 +237,7 @@ impl<T: VariantMetadata> Array<T> {
     /// still be shallow copied.
     ///
     /// To create a shallow copy, use [`duplicate_shallow()`] instead. To create a new reference to
-    /// the same array data, use [`share()`].
+    /// the same array data, use [`clone()`].
     pub fn duplicate_deep(&self) -> Self {
         let duplicate: VariantArray = self.as_inner().duplicate(true);
         // SAFETY: duplicate() returns a typed array with the same type as Self
@@ -586,10 +585,10 @@ impl<T: VariantMetadata> fmt::Debug for Array<T> {
 /// Creates a new reference to the data in this array. Changes to the original array will be
 /// reflected in the copy and vice versa.
 ///
-/// To create a (mostly) independent copy instead, see [`VariantArray::duplicate_shallow()`] and
-/// [`VariantArray::duplicate_deep()`].
-impl<T: VariantMetadata> Share for Array<T> {
-    fn share(&self) -> Self {
+/// To create a (mostly) independent copy instead, see [`Array::duplicate_shallow()`] and
+/// [`Array::duplicate_deep()`].
+impl<T: VariantMetadata> Clone for Array<T> {
+    fn clone(&self) -> Self {
         let array = unsafe {
             Self::from_sys_init(|self_ptr| {
                 let ctor = ::godot_ffi::builtin_fn!(array_construct_copy);

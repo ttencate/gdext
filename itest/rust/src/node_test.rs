@@ -7,7 +7,7 @@
 use crate::{itest, TestContext};
 use godot::builtin::{NodePath, Variant};
 use godot::engine::{global, node, Node, Node3D, NodeExt, PackedScene, SceneTree};
-use godot::obj::Share;
+use godot::obj::Gd;
 
 #[itest]
 fn node_get_node() {
@@ -18,7 +18,7 @@ fn node_get_node() {
     let mut parent = Node3D::new_alloc();
     parent.set_name("parent".into());
     parent.add_child(
-        child.share().upcast(),
+        Gd::clone(&child).upcast(),
         false,
         node::InternalMode::INTERNAL_MODE_DISABLED,
     );
@@ -26,7 +26,7 @@ fn node_get_node() {
     let mut grandparent = Node::new_alloc();
     grandparent.set_name("grandparent".into());
     grandparent.add_child(
-        parent.share().upcast(),
+        Gd::clone(&parent).upcast(),
         false,
         node::InternalMode::INTERNAL_MODE_DISABLED,
     );
@@ -62,13 +62,13 @@ fn node_scene_tree() {
     let mut parent = Node::new_alloc();
     parent.set_name("parent".into());
     parent.add_child(
-        child.share(),
+        Gd::clone(&child),
         false,
         node::InternalMode::INTERNAL_MODE_DISABLED,
     );
 
     let mut scene = PackedScene::new();
-    let err = scene.pack(parent.share());
+    let err = scene.pack(Gd::clone(&parent));
     assert_eq!(err, global::Error::OK);
 
     let mut tree = SceneTree::new_alloc();
@@ -85,7 +85,7 @@ fn node_scene_tree() {
 // FIXME: call_group() crashes
 #[itest(skip)]
 fn node_call_group(ctx: &TestContext) {
-    let mut node = ctx.scene_tree.share();
+    let mut node = Gd::clone(&ctx.scene_tree);
     let mut tree = node.get_tree().unwrap();
 
     node.add_to_group("group".into(), true);

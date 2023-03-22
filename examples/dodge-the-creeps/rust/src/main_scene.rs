@@ -92,7 +92,7 @@ impl Main {
         mob_scene.set_rotation(direction);
 
         self.base.add_child(
-            mob_scene.share().upcast(),
+            Gd::clone(&mob_scene).upcast(),
             false,
             InternalMode::INTERNAL_MODE_DISABLED,
         );

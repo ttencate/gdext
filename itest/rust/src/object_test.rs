@@ -16,8 +16,8 @@ use godot::engine::node::InternalMode;
 use godot::engine::{
     file_access, Area2D, Camera3D, FileAccess, Node, Node3D, Object, RefCounted, RefCountedVirtual,
 };
+use godot::obj::Inherits;
 use godot::obj::{Base, Gd, InstanceId};
-use godot::obj::{Inherits, Share};
 use godot::sys::GodotFfi;
 
 use crate::{expect_panic, itest, TestContext};
@@ -155,7 +155,7 @@ fn object_instance_id_when_freed() {
     let node: Gd<Node3D> = Node3D::new_alloc();
     assert!(node.is_instance_valid());
 
-    node.share().free(); // destroys object without moving out of reference
+    Gd::clone(&node).free(); // destroys object without moving out of reference
     assert!(!node.is_instance_valid());
 
     expect_panic("instance_id() on dead object", move || {
@@ -208,7 +208,7 @@ fn object_user_eq() {
     let b = ObjPayload { value };
 
     let a1 = Gd::new(a);
-    let a2 = a1.share();
+    let a2 = Gd::clone(&a1);
     let b1 = Gd::new(b);
 
     assert_eq!(a1, a2);
@@ -219,7 +219,7 @@ fn object_user_eq() {
 #[itest]
 fn object_engine_eq() {
     let a1 = Node3D::new_alloc();
-    let a2 = a1.share();
+    let a2 = Gd::clone(&a1);
     let b1 = Node3D::new_alloc();
 
     assert_eq!(a1, a2);
@@ -234,19 +234,19 @@ fn object_engine_eq() {
 fn object_dead_eq() {
     let a = Node3D::new_alloc();
     let b = Node3D::new_alloc();
-    let b2 = b.share();
+    let b2 = Gd::clone(&b);
 
     // Destroy b1 without consuming it
-    b.share().free();
+    Gd::clone(&b).free();
 
     {
-        let lhs = a.share();
+        let lhs = Gd::clone(&a);
         expect_panic("Gd::eq() panics when one operand is dead", move || {
             let _ = lhs == b;
         });
     }
     {
-        let rhs = a.share();
+        let rhs = Gd::clone(&a);
         expect_panic("Gd::ne() panics when one operand is dead", move || {
             let _ = b2 != rhs;
         });
@@ -429,7 +429,7 @@ fn object_engine_downcast_reflexive() {
 #[itest]
 fn object_engine_bad_downcast() {
     let object: Gd<Object> = Object::new_alloc();
-    let free_ref = object.share();
+    let free_ref = Gd::clone(&object);
     let node3d: Option<Gd<Node3D>> = object.try_cast::<Node3D>();
 
     assert!(node3d.is_none());
@@ -444,10 +444,10 @@ fn object_engine_accept_polymorphic() {
 
     node.set_name(GodotString::from(&expected_name));
 
-    let actual_name = accept_node(node.share());
+    let actual_name = accept_node(Gd::clone(&node));
     assert_eq!(actual_name, expected_name);
 
-    let actual_class = accept_object(node.share());
+    let actual_class = accept_object(Gd::clone(&node));
     assert_eq!(actual_class, expected_class);
 
     node.free();
@@ -458,7 +458,7 @@ fn object_user_accept_polymorphic() {
     let obj = Gd::new(ObjPayload { value: 123 });
     let expected_class = GodotString::from("ObjPayload");
 
-    let actual_class = accept_refcounted(obj.share());
+    let actual_class = accept_refcounted(Gd::clone(&obj));
     assert_eq!(actual_class, expected_class);
 
     let actual_class = accept_object(obj);
@@ -528,7 +528,7 @@ fn object_engine_manual_free() {
 
     {
         let node = Node3D::new_alloc();
-        let node2 = node.share();
+        let node2 = Gd::clone(&node);
         node2.free();
     } // drop(node)
 }
@@ -538,7 +538,7 @@ fn object_engine_manual_free() {
 fn object_engine_shared_free() {
     {
         let node = Node::new_alloc();
-        let _object = node.share().upcast::<Object>();
+        let _object = Gd::clone(&node).upcast::<Object>();
         node.free();
     } // drop(_object)
 }
@@ -547,7 +547,7 @@ fn object_engine_shared_free() {
 fn object_engine_manual_double_free() {
     expect_panic("double free()", || {
         let node = Node3D::new_alloc();
-        let node2 = node.share();
+        let node2 = Gd::clone(&node);
         node.free();
         node2.free();
     });
@@ -556,7 +556,7 @@ fn object_engine_manual_double_free() {
 #[itest]
 fn object_engine_refcounted_free() {
     let node = RefCounted::new();
-    let node2 = node.share().upcast::<Object>();
+    let node2 = Gd::clone(&node).upcast::<Object>();
 
     expect_panic("calling free() on RefCounted object", || node2.free())
 }
@@ -570,7 +570,7 @@ fn object_user_share_drop() {
     });
     assert_eq!(*drop_count.borrow(), 0);
 
-    let shared = object.share();
+    let shared = Gd::clone(&object);
     assert_eq!(*drop_count.borrow(), 0);
 
     drop(shared);
@@ -614,7 +614,7 @@ fn object_call_with_args() {
 fn object_get_scene_tree(ctx: &TestContext) {
     let node = Node3D::new_alloc();
 
-    let mut tree = ctx.scene_tree.share();
+    let mut tree = Gd::clone(&ctx.scene_tree);
     tree.add_child(node.upcast(), false, InternalMode::INTERNAL_MODE_DISABLED);
 
     let count = tree.get_child_count(false);
